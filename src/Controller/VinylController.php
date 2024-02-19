@@ -7,6 +7,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use function Symfony\Component\String\u;
 //use Knp\Bundle\TimeBundle\DateTimeFormatter;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\Cache\CacheInterface;
 
 class VinylController extends AbstractController
 {
@@ -29,11 +31,21 @@ class VinylController extends AbstractController
     }
 
     #[Route('/browse/{slug}', name: 'app_browse')]
-    public function browse(string $slug = null): Response
+    public function browse(HttpClientInterface $httpClient, CacheInterface $cache, string $slug = null): Response
     {
         //DateTimeFormatter $timeFormatter was removed from fn params
         $genre = $slug ? u(str_replace('-', ' ', $slug))->title(true) : null;
-        $mixes = $this->getMixes();
+        
+        $mixes = $cache->get('mixes_data', function(CacheItemInterface $cacheItem) use ($httpClient) {
+            $cacheItem->exopiresAfter(5);
+            $response = $httpClient->request('GET', 'https://raw.githubusercontent.com/SymfonyCasts/vinyl-mixes/main/mixes.json');
+            return $response->toArray();
+        });
+        /*
+        $response = $httpClient->request('GET', 'https://raw.githubusercontent.com/SymfonyCasts/vinyl-mixes/main/mixes.json');
+        $mixes = $response->toArray();
+        /*
+        //$mixes = $this->getMixes();
 
         /*
         foreach ($mixes as $key => $mix) {
@@ -46,7 +58,7 @@ class VinylController extends AbstractController
             'mixes' => $mixes,
         ]);
     }
-
+    /*
     private function getMixes(): array
     {
         // temporary fake "mixes" data
@@ -70,5 +82,5 @@ class VinylController extends AbstractController
                 'createdAt' => new \DateTime('2019-06-20'),
             ],
         ];
-    }
+    }*/
 }
