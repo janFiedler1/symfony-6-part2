@@ -31,13 +31,14 @@ class VinylController extends AbstractController
     }
 
     #[Route('/browse/{slug}', name: 'app_browse')]
-    public function browse(HttpClientInterface $httpClient, CacheInterface $cache, string $slug = null): Response
+    public function browse(HTTPClientInterface $httpClient, CacheInterface $cache, string $slug = null): Response
     {
+        dump($cache);
         //DateTimeFormatter $timeFormatter was removed from fn params
         $genre = $slug ? u(str_replace('-', ' ', $slug))->title(true) : null;
         
         $mixes = $cache->get('mixes_data', function(CacheItemInterface $cacheItem) use ($httpClient) {
-            $cacheItem->exopiresAfter(5);
+            $cacheItem->expiresAfter(5);
             $response = $httpClient->request('GET', 'https://raw.githubusercontent.com/SymfonyCasts/vinyl-mixes/main/mixes.json');
             return $response->toArray();
         });
